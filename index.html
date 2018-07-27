@@ -271,7 +271,7 @@
         
           <h1 class="post-title" itemprop="name headline">
                 
-                <a class="post-title-link" href="/2018/07/27/集合初始化时应指定初始值大小——学习《阿里Java开发手册》（一）/" itemprop="url">未命名</a></h1>
+                <a class="post-title-link" href="/2018/07/27/集合初始化时应指定初始值大小——学习《阿里Java开发手册》（一）/" itemprop="url">集合初始化时应指定初始值大小——学习《阿里Java开发手册》（一）</a></h1>
         
 
         <div class="post-meta">
@@ -283,7 +283,7 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-07-27T17:46:39+08:00">
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-07-27T00:00:00+08:00">
                 2018-07-27
               </time>
             
@@ -323,7 +323,7 @@
       
         
           
-            <h1 id="集合初始化时应指定初始值大小——学习《阿里Java开发手册》（一）"><a href="#集合初始化时应指定初始值大小——学习《阿里Java开发手册》（一）" class="headerlink" title="集合初始化时应指定初始值大小——学习《阿里Java开发手册》（一）"></a><strong>集合初始化时应指定初始值大小——学习《阿里Java开发手册》（一）</strong></h1><h2 id="起源"><a href="#起源" class="headerlink" title="起源"></a><strong>起源</strong></h2><p>&emsp;&emsp;关于《阿里Java开发手册》之前有粗略的看过，作为一个刚出道的菜鸡，还以为仅仅是对于基于代码观赏性而来对其规范的定义，但是最近逛知乎，偶然的机会看到一篇非常skr的文章，推荐一下<a href="https://zhuanlan.zhihu.com/p/39924972" target="_blank"> [ 《阿里巴巴java手册》存疑：initialCapacity ]</a>，其作者从存疑到肯定的过程，让我受益匪浅，作为一个程序猿学习或者看到一个观点都应有这样一个态度。并且完全是颠覆了我对这个手册的映像，原来这个手册不仅是基于代码观赏性，还有更多的是，基于JVM性能方面做出开发时的一些规范性的建议。一个小点，就能引申出很多对于Java底层实现的思考。以后会一直学习这个手册，巩固自己的Java基础。</p>
+            <h2 id="起源"><a href="#起源" class="headerlink" title="起源"></a><strong>起源</strong></h2><p>&emsp;&emsp;关于《阿里Java开发手册》之前有粗略的看过，作为一个刚出道的菜鸡，还以为仅仅是对于基于代码观赏性而来对其规范的定义，但是最近逛知乎，偶然的机会看到一篇非常skr的文章，推荐一下<a href="https://zhuanlan.zhihu.com/p/39924972" target="_blank"> [ 《阿里巴巴java手册》存疑：initialCapacity ]</a>，其作者从存疑到肯定的过程，让我受益匪浅，作为一个程序猿学习或者看到一个观点都应有这样一个态度。并且完全是颠覆了我对这个手册的映像，原来这个手册不仅是基于代码观赏性，还有更多的是，基于JVM性能方面做出开发时的一些规范性的建议。一个小点，就能引申出很多对于Java底层实现的思考。以后会一直学习这个手册，巩固自己的Java基础。</p>
 <p>&emsp;&emsp;本文是对于看了知乎文章<a href="https://zhuanlan.zhihu.com/p/39924972" target="_blank"> [ 《阿里巴巴java手册》存疑：initialCapacity ]</a>这篇文章之后的个人的总结和理解。<br><br><br></p>
 <h2 id="开始"><a href="#开始" class="headerlink" title="开始"></a><strong>开始</strong></h2><p>&emsp;&emsp;我所转的这篇知乎，作者初始是看到了阿里手册上的这么一个推荐而引起的疑惑。如下图：<br><img src="https://i.loli.net/2018/07/27/5b5a8852ac3d6.png" alt="blogphoto.png"><br>&emsp;&emsp;以前刷面试题，看数据结构的时候，其实有对集合默认初始容量，及自动扩容机制有所了解。Java中各种集合本质其实也是数组+链表或者数组加二叉树的存储形式，不过对其进行了重新封装定义。回想看项目源码和写接口时，自己和他人写的代码，几乎没有指定集合初始值大小。到底这样会不会影响性能呢？根据知乎题主所提供的方法，我也对HashMap与ArrayList这两个集合类进行了性能测试。</p>
 <ul>
