@@ -323,25 +323,15 @@
       
         
           
-            <h2 id="起源"><a href="#起源" class="headerlink" title="起源"></a><strong>起源</strong></h2><p>&emsp;&emsp;关于《阿里Java开发手册》之前有粗略的看过，作为一个刚出道的菜鸡，还以为仅仅是对于基于代码观赏性而来对其规范的定义，但是最近逛知乎，偶然的机会看到一篇非常skr的文章，推荐一下<a href="https://zhuanlan.zhihu.com/p/39924972" target="_blank"> [ 《阿里巴巴java手册》存疑：initialCapacity ]</a>，其作者从存疑到肯定的过程，让我受益匪浅，作为一个程序猿学习或者看到一个观点都应有这样一个态度。并且完全是颠覆了我对这个手册的映像，原来这个手册不仅是基于代码观赏性，还有更多的是，基于JVM性能方面做出开发时的一些规范性的建议。一个小点，就能引申出很多对于Java底层实现的思考。以后会一直学习这个手册，巩固自己的Java基础。</p>
-<p>&emsp;&emsp;本文是对于看了知乎文章<a href="https://zhuanlan.zhihu.com/p/39924972" target="_blank"> [ 《阿里巴巴java手册》存疑：initialCapacity ]</a>这篇文章之后的个人的总结和理解。<br><br><br></p>
-<h2 id="开始"><a href="#开始" class="headerlink" title="开始"></a><strong>开始</strong></h2><p>&emsp;&emsp;我所转的这篇知乎，作者初始是看到了阿里手册上的这么一个推荐而引起的疑惑。如下图：<br><img src="https://i.loli.net/2018/07/27/5b5a8852ac3d6.png" alt="blogphoto.png"><br>&emsp;&emsp;以前刷面试题，看数据结构的时候，其实有对集合默认初始容量，及自动扩容机制有所了解。Java中各种集合本质其实也是数组+链表或者数组加二叉树的存储形式，不过对其进行了重新封装定义。回想看项目源码和写接口时，自己和他人写的代码，几乎没有指定集合初始值大小。到底这样会不会影响性能呢？根据知乎题主所提供的方法，我也对HashMap与ArrayList这两个集合类进行了性能测试。</p>
-<ul>
-<li>HashMap 代码：<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">CapacityTest</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> num = <span class="number">1</span>; num &lt; <span class="number">1000000000</span>; num = num * <span class="number">10</span>) &#123;</span><br><span class="line">            <span class="keyword">int</span> capacity = (<span class="keyword">int</span>) (num / <span class="number">0.75</span> + <span class="number">1</span>);</span><br><span class="line">            String test = <span class="string">"test"</span>;</span><br><span class="line">            System.out.println(<span class="string">"num is "</span> + num);</span><br><span class="line">            Map&lt;Integer, String&gt; map = <span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">            Map&lt;Integer, String&gt; mapCapacity = <span class="keyword">new</span> HashMap&lt;&gt;(capacity);</span><br><span class="line">            <span class="keyword">long</span> strat1 = System.nanoTime();</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; num; i++) &#123;</span><br><span class="line">                map.put(i, test);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">long</span> end1 = System.nanoTime();</span><br><span class="line">            System.out.println(<span class="string">"没设置初始值的map: "</span> + (end1 - strat1) + <span class="string">"  capacity: "</span> + <span class="string">"null"</span>);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">long</span> strat2 = System.nanoTime();</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; num; i++) &#123;</span><br><span class="line">                mapCapacity.put(i, test);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">long</span> end2 = System.nanoTime();</span><br><span class="line">            System.out.println(<span class="string">"设置了初始值的map: "</span> + (end2 - strat2) + <span class="string">"  capacity: "</span> + capacity);</span><br><span class="line">            System.out.println(<span class="string">"*****************************************************************"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>代码的运行结果：<br><img src="https://i.loli.net/2018/07/27/5b5abc8748238.png" alt="blogphoto.png"></p>
-<p>从结果上可以看出，绝大多数数据还时有比较明显的性能上的提升，但是个别数据，如图中红色框标记的数据，单从耗时上来说甚至比没有设置的初始值还多，这是什么原因呢？<br><br>这里可以先简单的了解一下HashMap的底层实现，Java8中HashMap的构造比较复杂，由数组加（链表或红黑树）的结构来处理哈希碰撞，不得不说，这个设计模式真的是很优秀。Java8以前的HashMap的实现是数组+链表，元素储存的下标=key的hash值 % 数组长度 -1，其对应一个桶，里边会放很多元素，当大量元素都存放到一个桶中，这个桶就会有一个长长的链表，这个时候的HashMap就相当于一个单链表，失去它的优势，遍历元素花费很大。为此，Java8的HashMap引入了红黑树，会根据桶中的元素数量，来自动进行树形链形的切换，优化遍历元素时间复杂度高的问题。<br><br>当所需要数组长度超过阈值（capacity * loadFactor）时，HashMap调用resize()方法进行扩容，数组长度小于最大值时，扩容为原来两倍。由于数组不能自动扩容，扩容实际上是建立一个更长数组，替换原来的数组，并进行元素迁移。<br><br>由于，HashMap扩容机制的复杂性，所以出现红框里的现象也是正常的。当然，我们判断性能不能当从运行时间上来看，还有程序运行时所需要的空间，CPU的损耗等。<br></p>
-<ul>
-<li>ArrayList 代码：</li>
-</ul>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ArraryCapacityTest</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        String test = <span class="string">"test"</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> num = <span class="number">1</span>; num &lt; <span class="number">100000000</span>; num = num * <span class="number">10</span>) &#123;</span><br><span class="line">            <span class="keyword">int</span> capacity = (<span class="keyword">int</span>) (num + <span class="number">1</span>);</span><br><span class="line">            System.out.println(<span class="string">"num is "</span> + num);</span><br><span class="line">            List&lt;String&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">            List&lt;String&gt; listCapacity = <span class="keyword">new</span> ArrayList&lt;&gt;(capacity);</span><br><span class="line">            <span class="keyword">long</span> strat1 = System.nanoTime();</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; num; i++) &#123;</span><br><span class="line">                list.add(test);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">long</span> end1 = System.nanoTime();</span><br><span class="line">            System.out.println(<span class="string">"没设置初始值的List: "</span> + (end1 - strat1) + <span class="string">"  capacity: "</span> + <span class="string">"null"</span>);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">long</span> strat2 = System.nanoTime();</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; num; i++) &#123;</span><br><span class="line">                listCapacity.add(test);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">long</span> end2 = System.nanoTime();</span><br><span class="line">            System.out.println(<span class="string">"设置了初始值的List: "</span> + (end2 - strat2) + <span class="string">"  capacity: "</span> + capacity);</span><br><span class="line">            System.out.println(<span class="string">"*****************************************************************"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>代码运行结果：</p>
-<p><img src="https://i.loli.net/2018/07/27/5b5ace7df2c58.png" alt="blogphoto.png"></p>
-<p>同样的方法来测试ArrayList，结果体现的就比较明显，以为List组成结构比较简单，就是可动态扩容的数组，所以没有初始化大小通过扩容机制来动态扩容的ArrayList，在进行添加操作时会影响性能。</p>
-<h2 id="结束"><a href="#结束" class="headerlink" title="结束"></a><strong>结束</strong></h2><p>&emsp;&emsp;最后，实际编写代码时，我们可以估算一下所需要的容量，初始化集合的大小，如果不知道应该将集合初始化为默认值。<br><br>&emsp;&emsp;现在个人菜鸡的阶段，写博客是为了巩固自己的基础，记录自己学到的用到的东西，做技术储备，将来用到的时候忘记了可以拿出来看看，是个人的总结。如果其中有什么地方写错了或者不严谨的话，欢迎大家可以指出。一起加油！</p>
-
-          
+          起源&emsp;&emsp;关于《阿里Java开发手册》之前有粗略的看过，作为一个刚出道的菜鸡，还以为仅仅是对于基于代码观赏性而来对其规范的定义，但是最近逛知乎，偶然的机会看到一篇非常skr的文章，推荐一下 [ 《阿里巴巴java手册》存疑：initialCapacity ]，其作者从存疑到肯定的过
+          ...
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2018/07/27/集合初始化时应指定初始值大小——学习《阿里Java开发手册》（一）/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
         
       
     </div>
@@ -439,6 +429,28 @@
 
           
 
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://blog.csdn.net/zhuolou1208" target="_blank" title="CSDN">
+                      
+                        <i class="fa fa-fw fa-globe"></i>CSDN</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.jianshu.com/u/7dcca2e9206c" target="_blank" title="JIANSHU">
+                      
+                        <i class="fa fa-fw fa-globe"></i>JIANSHU</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://weibo.com/u/6581410880" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+            </div>
           
 
           
