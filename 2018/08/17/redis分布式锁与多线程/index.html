@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="简介 关于多线程  &amp;emsp;&amp;emsp;首先，先复习一下Java多线程。我们都知道，启动一个Java程序，操作系统会为其创建一个进程，而一个进程中可以创建多个线程，线程之间能够访问共享的内存变量，通过操作系统处理器的调度，可以让我们的程序变得更加高效。 &amp;emsp;&amp;emsp;Java线程在运行的生命周期中有6种不同的状态。    状态名称 说明     NEW 初始状态，没有调用start(">
+<meta property="og:type" content="article">
+<meta property="og:title" content="redis分布式锁与多线程">
+<meta property="og:url" content="http://yoursite.com/2018/08/17/redis分布式锁与多线程/index.html">
+<meta property="og:site_name" content="Lkyi&#39;s Blog">
+<meta property="og:description" content="简介 关于多线程  &amp;emsp;&amp;emsp;首先，先复习一下Java多线程。我们都知道，启动一个Java程序，操作系统会为其创建一个进程，而一个进程中可以创建多个线程，线程之间能够访问共享的内存变量，通过操作系统处理器的调度，可以让我们的程序变得更加高效。 &amp;emsp;&amp;emsp;Java线程在运行的生命周期中有6种不同的状态。    状态名称 说明     NEW 初始状态，没有调用start(">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://i.loli.net/2018/08/17/5b763aa29bef0.png">
+<meta property="og:image" content="https://i.loli.net/2018/08/17/5b76616dbf583.png">
+<meta property="og:updated_time" content="2018-08-17T06:41:14.288Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="redis分布式锁与多线程">
+<meta name="twitter:description" content="简介 关于多线程  &amp;emsp;&amp;emsp;首先，先复习一下Java多线程。我们都知道，启动一个Java程序，操作系统会为其创建一个进程，而一个进程中可以创建多个线程，线程之间能够访问共享的内存变量，通过操作系统处理器的调度，可以让我们的程序变得更加高效。 &amp;emsp;&amp;emsp;Java线程在运行的生命周期中有6种不同的状态。    状态名称 说明     NEW 初始状态，没有调用start(">
+<meta name="twitter:image" content="https://i.loli.net/2018/08/17/5b763aa29bef0.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/08/17/redis分布式锁与多线程/"/>
+
+
+
+
+
+  <title>redis分布式锁与多线程 | Lkyi's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Lkyi's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Quick notes</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/08/17/redis分布式锁与多线程/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="JAVA界的博格巴">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Lkyi's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">redis分布式锁与多线程</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-08-17T00:00:00+08:00">
+                2018-08-17
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a><strong>简介</strong></h2><ul>
+<li><strong>关于多线程</strong></li>
+</ul>
+<p>&emsp;&emsp;首先，先复习一下Java多线程。我们都知道，启动一个Java程序，操作系统会为其创建一个进程，而一个进程中可以创建多个线程，线程之间能够访问共享的内存变量，通过操作系统处理器的调度，可以让我们的程序变得更加高效。</p>
+<p>&emsp;&emsp;Java线程在运行的生命周期中有6种不同的状态。</p>
+<table>
+<thead>
+<tr>
+<th>状态名称</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NEW</td>
+<td>初始状态，没有调用start()方法</td>
+</tr>
+<tr>
+<td>RUNABLE</td>
+<td>运行状态 </td>
+</tr>
+<tr>
+<td>BLOCKED</td>
+<td>阻塞状态，表示线程阻塞于锁</td>
+</tr>
+<tr>
+<td>WAITING</td>
+<td>等待状态</td>
+</tr>
+<tr>
+<td>TIME_WAITING</td>
+<td>超时等待状态</td>
+</tr>
+<tr>
+<td>TERMINATED</td>
+<td>终止状态</td>
+</tr>
+</tbody>
+</table>
+<p>实际项目中，我们经常会遇到类似这样的并发场景：</p>
+<blockquote>
+<p>优惠券的抢购：多个线程抢购一定数量的优惠券，最后剩余的优惠券数量为负数</p>
+</blockquote>
+<p>产生的原因是：当多个线程对同一个变量进行操作时，会出现一个线程的业务逻辑没有结束，另一个线程就取获取变量进行操作，这时变量还处于之前的值。</p>
+<p>解决这种问题的方式有很多，比如，可以用volatile修饰成员变量，这样对该变量的访问必须从共享内存中获取，同时它的改变必须同步刷新到共享内存中，保证所有线程的可见性；还有最常见的方法，使用关键字synchronized实现对同步块同步方法的上锁。</p>
+<p>当然，在一个JVM中这样的方法是可行的，当出现分布式，多个节点，即在WEB项目中，多个客户端对一个数据进行请求时，则需要使用分布式锁。</p>
+<p>分布式锁 Java主要有两种实现，redis和zookeeper。本文主要是介绍redislock的实现</p>
+<p>-<strong>关于redis</strong></p>
+<p>&emsp;&emsp;redis英文全称[Remote Dictionary Service]，(WIKI解释：Redis是一个使用ANSI C编写的开源、支持网络、基于内存、可选持久性的键值对存储数据库)，在互联网技术领域，Redis是使用最为广泛的存储中间件，在实际项目开发中，redis常被用来做一些数据的缓存，以及本文所讲的分布式锁，不论应用于哪方面其效率都是很高的。</p>
+<h2 id="实现"><a href="#实现" class="headerlink" title="实现"></a><strong>实现</strong></h2><p>&emsp;&emsp;redis分布式锁的实现原理是线程执行业务逻辑前，必须先获取锁，获取锁的方法其实是不断尝试在redis中set一条记录，set成功才返回true，随后执行业务逻辑，执行结束后，释放锁，即从redis中将这条记录删除，以便其他线程可以获取锁。</p>
+<ul>
+<li><strong>获取锁</strong></li>
+</ul>
+<p>&emsp;&emsp;redis的官方文档给出了解决思路，如下图为获取锁——set记录的方法：</p>
+<p><img src="https://i.loli.net/2018/08/17/5b763aa29bef0.png" alt="image.png"></p>
+<p>这条指令是setnx和expire组合在一起的原子指令，30000对应的是过期时间，单位是毫秒。</p>
+<p>&emsp;&emsp;在以前的redis版本，这个指令需要分两部分执行。一般执行一个并发业务时，定义一个唯一的key，通过setnx(set if not exists)指令，当只有不存在此key值的记录时才能set，返回true。这时会出现一个问题，当业务逻辑没执行完，锁没有释放的情况下，出现服务宕机，那这时redis中锁就会一直存在，别的客户端就获取不到锁，造成死锁现象。这时需要给锁添加过期时间，即进行expire指令，超出过期时间锁自动删除。即如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&gt; setnx lock:codehole true</span><br><span class="line">OK</span><br><span class="line">&gt; expire lock:codehole 5</span><br></pre></td></tr></table></figure>
+<p>这个时候又会出现一个问题，在setnx后锁成功插入，执行expire之前，服务出现宕机，进程挂掉了，那么expire还是得不到执行，一样会造成死锁。</p>
+<p>为解决这种情况，出现了现在的原子指令。</p>
+<p>所谓原子操作，即保证操作一直运行到结束。在这里，把setnx与expire结合成一条语句执行，保持了操作的原子性，要么都成功，要么都不成功。保证操作原子性在分布式锁是非常非常非常关键的。</p>
+<p>下面是Java中的实现：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 上锁成功后返回值</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String LOCK_SUCCESS = <span class="string">"OK"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * SetNX方法中NX的含义</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String SET_IF_NOT_EXIST = <span class="string">"NX"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * SetNX方法中PX的含义</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String SET_WITH_EXPIRE_TIME = <span class="string">"PX"</span>;</span><br><span class="line"></span><br><span class="line"> <span class="meta">@Resource</span></span><br><span class="line">    <span class="keyword">private</span> StringRedisTemplate stringRedisTemplate;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 使用Jedis客户端执行原子指令</span></span><br><span class="line"><span class="comment">     * </span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> key</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> value</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> expiry</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">setNX</span><span class="params">(String key, String value, <span class="keyword">long</span> expiry)</span> </span>&#123;</span><br><span class="line">        <span class="comment">//指令执行成功的话返回"OK"</span></span><br><span class="line">        String result = stringRedisTemplate.execute((RedisCallback&lt;String&gt;) connection -&gt; &#123;</span><br><span class="line">            JedisCommands commands = (JedisCommands) connection.getNativeConnection();</span><br><span class="line">            <span class="keyword">return</span> commands.set(key, value, SET_IF_NOT_EXIST, SET_WITH_EXPIRE_TIME, expiry);</span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> LOCK_SUCCESS.equals(result);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<p>这个demo基于springboot1.5，对redis进行了整合，通过@Resource注释，注入了StringRedisTemplate，并结合Jedis对redis进行操作。</p>
+<p>有了这个方法，就可以对获取锁的方法进行进一步的处理。可以在一定的时间内不断的重试获取锁，这里必须设置一个重试超时时间和最多重试次数，防止线程饥饿，一直在重试获取锁。</p>
+<ul>
+<li><strong>解锁</strong></li>
+</ul>
+<p>&emsp;&emsp;成功获取锁了，接下来的问题就是如何安全的解锁——将锁删除。先来看看官方文档的实现：</p>
+<p><img src="https://i.loli.net/2018/08/17/5b76616dbf583.png" alt="image.png"></p>
+<p>解锁需要注意一个问题，如果一个线程由于某些原因，执行任务的时间超过了锁的过期时间，那么redis将会释放锁，其他线程将会获取锁，这时，原来的超时的线程执行完自己的业务逻辑以后，会执行解锁操作，把其他线程业务逻辑还没执行完的锁就被误删，别的线程也会再次取得锁。如此反复。</p>
+<p>为了解决这个问题，官方给出的方法是，redis执行Lua脚本，删除锁前，比较value值是否相等，相等才能进行删除操作。Lua脚本可以保证连续多个指令原子性的完成。因为value的比较和key的删除不是一个原子操作。</p>
+<p>下面是Java中执行Lua脚本的方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * lua脚本：key相等时判断value值是否相等，相等的话则删除</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String LUA_UNLOCK_SCRIPT = <span class="string">"if redis.call(\"get\",KEYS[1]) == ARGV[1] "</span> +</span><br><span class="line">        <span class="string">"then "</span> +</span><br><span class="line">        <span class="string">"return redis.call(\"del\",KEYS[1]) "</span> +</span><br><span class="line">        <span class="string">"else "</span> +</span><br><span class="line">        <span class="string">"return 0 "</span> +</span><br><span class="line">        <span class="string">"end"</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 调用Lua脚本删除key</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> keys</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> args</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">delate</span><span class="params">(List&lt;String&gt; keys, List&lt;String&gt; args)</span> </span>&#123;</span><br><span class="line">    Object result = stringRedisTemplate.execute((RedisCallback&lt;Object&gt;) connection -&gt; &#123;</span><br><span class="line">        Object nativeConnection = connection.getNativeConnection();</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> (nativeConnection <span class="keyword">instanceof</span> Jedis) &#123;</span><br><span class="line">            <span class="keyword">return</span> ((Jedis) nativeConnection).eval(LUA_UNLOCK_SCRIPT, keys, args);</span><br><span class="line">        &#125; </span><br><span class="line">        <span class="comment">//如果时redis集群</span></span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (nativeConnection <span class="keyword">instanceof</span> JedisCluster) &#123;</span><br><span class="line">            <span class="keyword">return</span> ((JedisCluster) nativeConnection).eval(LUA_UNLOCK_SCRIPT, keys, args);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0L</span>;</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> result != <span class="keyword">null</span> &amp;&amp; Long.parseLong(result.toString()) &gt; <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以使用如下的方式设置value值，尽可能保证每个线程的value值唯一，并可以使用ThreadLocal线程变量，存储当前线程的value。ThreadLocal 是一个以ThreadLocal对象为键、任意对象为值得存储结构。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">String value =  UUID.randomUUID().toString();</span><br></pre></td></tr></table></figure>
+<h2 id="思考"><a href="#思考" class="headerlink" title="思考"></a><strong>思考</strong></h2><p>&emsp;&emsp;这种方案也不是那么的完美，如果出现线程业务超时完成的话，那么一样会有别的线程可以获取到锁执行自己的业务，这样虽然不会误删当前线程的锁，但是，这个线程获取到的数据或者变量是上一个锁执行完成之后的，一样可能会造成数据异常。</p>
+<p>&emsp;&emsp;如果项目要求高的话，可以尝试使用zookeeper来做分布式锁，或者别的解决方案。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/07/30/Springboot security 结合 JJWT 构建登陆鉴权模块/" rel="next" title="Springboot security 结合 JJWT 构建登陆鉴权模块">
+                <i class="fa fa-chevron-left"></i> Springboot security 结合 JJWT 构建登陆鉴权模块
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/avatar.png"
+                alt="JAVA界的博格巴" />
+            
+              <p class="site-author-name" itemprop="name">JAVA界的博格巴</p>
+              <p class="site-description motion-element" itemprop="description">努力工作，和养猫</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://blog.csdn.net/zhuolou1208" target="_blank" title="CSDN">
+                      
+                        <i class="fa fa-fw fa-globe"></i>CSDN</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.weibo.com/u/6581410880" target="_blank" title="Weibo">
+                      
+                        <i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#简介"><span class="nav-number">1.</span> <span class="nav-text">简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实现"><span class="nav-number">2.</span> <span class="nav-text">实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#思考"><span class="nav-number">3.</span> <span class="nav-text">思考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">JAVA界的博格巴</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
